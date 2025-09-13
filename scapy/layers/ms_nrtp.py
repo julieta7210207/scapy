@@ -639,14 +639,14 @@ class NRBFClassInfo(Packet):
 
 
 class NRBFAdditionalInfo(Packet):
-    __slots__ = ["type"]
+    __slots__ = ["_type"]
 
     fields_desc = [
         MultipleTypeField(
             [
                 (
                     ByteEnumField("Value", 0, PrimitiveTypeEnum),
-                    lambda pkt: pkt.type
+                    lambda pkt: pkt._type
                     in [
                         BinaryTypeEnum.Primitive,
                         BinaryTypeEnum.PrimitiveArray,
@@ -656,11 +656,11 @@ class NRBFAdditionalInfo(Packet):
                     PacketField(
                         "Value", NRBFLengthPrefixedString(), NRBFLengthPrefixedString
                     ),
-                    lambda pkt: pkt.type == BinaryTypeEnum.SystemClass,
+                    lambda pkt: pkt._type == BinaryTypeEnum.SystemClass,
                 ),
                 (
                     PacketField("Value", NRBFClassTypeInfo(), NRBFClassTypeInfo),
-                    lambda pkt: pkt.type == BinaryTypeEnum.Class,
+                    lambda pkt: pkt._type == BinaryTypeEnum.Class,
                 ),
             ],
             StrFixedLenField("Value", b"", length=0),
@@ -668,18 +668,18 @@ class NRBFAdditionalInfo(Packet):
     ]
 
     def __init__(self, _pkt=None, **kwargs):
-        self.type = kwargs.pop("type", BinaryTypeEnum.Primitive)
-        assert isinstance(self.type, BinaryTypeEnum)
+        self._type = kwargs.pop("type", BinaryTypeEnum.Primitive)
+        assert isinstance(self._type, BinaryTypeEnum)
         super(NRBFAdditionalInfo, self).__init__(_pkt, **kwargs)
 
     def clone_with(self, *args, **kwargs):
         pkt = super(NRBFAdditionalInfo, self).clone_with(*args, **kwargs)
-        pkt.type = self.type
+        pkt._type = self._type
         return pkt
 
     def copy(self):
         pkt = super(NRBFAdditionalInfo, self).copy()
-        pkt.type = self.type
+        pkt._type = self._type
         return pkt
 
     def default_payload_class(self, payload):
@@ -752,30 +752,30 @@ class NRBFClassWithId(NRBFRecord):
 
 
 class NRBFMemberPrimitiveUnTyped(Packet):
-    __slots__ = ["type"]
+    __slots__ = ["_type"]
 
     fields_desc = [
         NRBFValueWithCode.fields_desc[1],
     ]
 
     def __init__(self, _pkt=None, **kwargs):
-        self.type = kwargs.pop("type", PrimitiveTypeEnum.Byte)
-        assert isinstance(self.type, PrimitiveTypeEnum)
+        self._type = kwargs.pop("type", PrimitiveTypeEnum.Byte)
+        assert isinstance(self._type, PrimitiveTypeEnum)
         super(NRBFMemberPrimitiveUnTyped, self).__init__(_pkt, **kwargs)
 
     def clone_with(self, *args, **kwargs):
         pkt = super(NRBFMemberPrimitiveUnTyped, self).clone_with(*args, **kwargs)
-        pkt.type = self.type
+        pkt._type = self._type
         return pkt
 
     def copy(self):
         pkt = super(NRBFMemberPrimitiveUnTyped, self).copy()
-        pkt.type = self.type
+        pkt._type = self._type
         return pkt
 
     @property
     def PrimitiveType(self):
-        return self.type
+        return self._type
 
     def default_payload_class(self, payload):
         return conf.padding_layer

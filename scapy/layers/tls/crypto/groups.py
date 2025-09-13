@@ -451,19 +451,35 @@ def _tls_named_groups_import(group, pubbytes):
 
 
 def _tls_named_groups_pubbytes(privkey):
-    if isinstance(privkey, dh.DHPrivateKey):
-        # https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.8.1
-        pubkey = privkey.public_key()
-        return int_bytes(pubkey.public_numbers().y, privkey.key_size // 8)
-    elif isinstance(privkey, (x25519.X25519PrivateKey,
-                              x448.X448PrivateKey)):
+    if isinstance(privkey, (x25519.X25519PrivateKey,
+                            x448.X448PrivateKey)):
         # https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.8.2
         pubkey = privkey.public_key()
         return pubkey.public_bytes(
             serialization.Encoding.Raw,
             serialization.PublicFormat.Raw
         )
+    elif isinstance(privkey, ec.EllipticCurvePrivateKey):
+        pubkey = privkey.public_key()
+        try:
+            # cryptography >= 2.5
+            return pubkey.public_bytes(
+                serialization.Encoding.X962,
+                serialization.PublicFormat.UncompressedPoint
+            )
+        except TypeError:
+            # older versions
+            return pubkey.public_numbers().encode_point()
     else:
+        import warnings
+        with warnings.catch_warnings():
+            # FFDH is deprecated in recent cryptography versions
+            warnings.simplefilter("ignore")
+            is_dh = isinstance(privkey, dh.DHPrivateKey)
+        if is_dh:
+            # https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.8.1
+            pubkey = privkey.public_key()
+            return int_bytes(pubkey.public_numbers().y, privkey.key_size // 8)
         pubkey = privkey.public_key()
         try:
             # cryptography >= 2.5

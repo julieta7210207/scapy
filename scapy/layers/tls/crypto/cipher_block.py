@@ -133,8 +133,15 @@ if conf.crypto_valid:
     class Cipher_AES_256_CBC(Cipher_AES_128_CBC):
         key_len = 32
 
+    try:
+        from cryptography.hazmat.decrepit.ciphers.algorithms import (
+            Camellia as _Camellia,
+        )
+    except ImportError:
+        _Camellia = algorithms.Camellia
+
     class Cipher_CAMELLIA_128_CBC(_BlockCipher):
-        pc_cls = algorithms.Camellia
+        pc_cls = _Camellia
         pc_cls_mode = modes.CBC
         block_size = 16
         key_len = 16
