@@ -577,7 +577,6 @@ class ServerECDHNamedCurveParams(_GenericTLSSessionInheritance):
                    StrLenField("point", None,
                                length_from=lambda pkt: pkt.pointlen)]
 
-    @crypto_validator
     def fill_missing(self):
         """
         We do not want TLSServerKeyExchange.build() to overload and recompute
@@ -598,22 +597,24 @@ class ServerECDHNamedCurveParams(_GenericTLSSessionInheritance):
         if curve_group not in _tls_named_curves:
             # this fallback is arguable
             curve_group = 23  # default to secp256r1
-        s.server_kx_privkey = _tls_named_groups_generate(curve_group)
-        s.kx_group = _tls_named_curves.get(curve_group, str(curve_group))
+        try:
+            s.server_kx_privkey = _tls_named_groups_generate(curve_group)
+            s.kx_group = _tls_named_curves.get(curve_group, str(curve_group))
 
-        if self.point is None:
-            self.point = _tls_named_groups_pubbytes(
-                s.server_kx_privkey
-            )
+            if self.point is None:
+                self.point = _tls_named_groups_pubbytes(
+                    s.server_kx_privkey
+                )
 
-        # else, we assume that the user wrote the server_kx_privkey by himself
-        if self.pointlen is None:
-            self.pointlen = len(self.point)
+            # else, we assume that the user wrote the server_kx_privkey by himself
+            if self.pointlen is None:
+                self.pointlen = len(self.point)
 
-        if not s.client_kx_ecdh_params:
-            s.client_kx_ecdh_params = curve_group
+            if not s.client_kx_ecdh_params:
+                s.client_kx_ecdh_params = curve_group
+        except ImportError:
+            pass
 
-    @crypto_validator
     def register_pubkey(self):
         """
         XXX Support compressed point format.
@@ -624,14 +625,17 @@ class ServerECDHNamedCurveParams(_GenericTLSSessionInheritance):
         #    point_format = 1
 
         s = self.tls_session
-        s.server_kx_pubkey = _tls_named_groups_import(
-            self.named_curve,
-            self.point
-        )
-        s.kx_group = _tls_named_curves.get(self.named_curve, str(self.named_curve))
+        try:
+            s.server_kx_pubkey = _tls_named_groups_import(
+                self.named_curve,
+                self.point
+            )
+            s.kx_group = _tls_named_curves.get(self.named_curve, str(self.named_curve))
 
-        if not s.client_kx_ecdh_params:
-            s.client_kx_ecdh_params = self.named_curve
+            if not s.client_kx_ecdh_params:
+                s.client_kx_ecdh_params = self.named_curve
+        except ImportError:
+            pass
 
     def post_dissection(self, r):
         try:
@@ -673,33 +677,37 @@ class ServerRSAParams(_GenericTLSSessionInheritance):
                    StrLenField("rsaexp", "",
                                length_from=lambda pkt: pkt.rsaexplen)]
 
-    @crypto_validator
     def fill_missing(self):
-        k = PrivKeyRSA()
-        k.fill_and_store(modulusLen=512)
-        self.tls_session.server_tmp_rsa_key = k
-        pubNum = k.pubkey.public_numbers()
+        try:
+            k = PrivKeyRSA()
+            k.fill_and_store(modulusLen=512)
+            self.tls_session.server_tmp_rsa_key = k
+            pubNum = k.pubkey.public_numbers()
 
-        if not self.rsamod:
-            self.rsamod = pkcs_i2osp(pubNum.n, k.pubkey.key_size // 8)
-        if self.rsamodlen is None:
-            self.rsamodlen = len(self.rsamod)
+            if not self.rsamod:
+                self.rsamod = pkcs_i2osp(pubNum.n, k.pubkey.key_size // 8)
+            if self.rsamodlen is None:
+                self.rsamodlen = len(self.rsamod)
 
-        self.tls_session.kx_group = "rsa%s" % self.rsamodlen
+            self.tls_session.kx_group = "rsa%s" % self.rsamodlen
 
-        rsaexplen = math.ceil(math.log(pubNum.e) / math.log(2) / 8.)
-        if not self.rsaexp:
-            self.rsaexp = pkcs_i2osp(pubNum.e, rsaexplen)
-        if self.rsaexplen is None:
-            self.rsaexplen = len(self.rsaexp)
+            rsaexplen = math.ceil(math.log(pubNum.e) / math.log(2) / 8.)
+            if not self.rsaexp:
+                self.rsaexp = pkcs_i2osp(pubNum.e, rsaexplen)
+            if self.rsaexplen is None:
+                self.rsaexplen = len(self.rsaexp)
+        except ImportError:
+            pass
 
-    @crypto_validator
     def register_pubkey(self):
         mLen = self.rsamodlen
         m = self.rsamod
         e = self.rsaexp
-        self.tls_session.server_tmp_rsa_key = PubKeyRSA((e, m, mLen))
-        self.tls_session.kx_group = "rsa%s" % mLen
+        try:
+            self.tls_session.server_tmp_rsa_key = PubKeyRSA((e, m, mLen))
+            self.tls_session.kx_group = "rsa%s" % mLen
+        except ImportError:
+            pass
 
     def post_dissection(self, pkt):
         try:
@@ -759,19 +767,22 @@ class ClientDiffieHellmanPublic(_GenericTLSSessionInheritance):
     @crypto_validator
     def fill_missing(self):
         s = self.tls_session
-        s.client_kx_privkey = s.client_kx_ffdh_params.generate_private_key()
-        pubkey = s.client_kx_privkey.public_key()
-        y = pubkey.public_numbers().y
-        self.dh_Yc = pkcs_i2osp(y, pubkey.key_size // 8)
+        try:
+            s.client_kx_privkey = s.client_kx_ffdh_params.generate_private_key()
+            pubkey = s.client_kx_privkey.public_key()
+            y = pubkey.public_numbers().y
+            self.dh_Yc = pkcs_i2osp(y, pubkey.key_size // 8)
 
-        if s.client_kx_privkey and s.server_kx_pubkey:
-            pms = s.client_kx_privkey.exchange(s.server_kx_pubkey)
-            s.pre_master_secret = pms.lstrip(b"\x00")
-            if not s.extms:
-                # If extms is set (extended master secret), the key will
-                # need the session hash to be computed. This is provided
-                # by the TLSClientKeyExchange. Same in all occurrences
-                s.compute_ms_and_derive_keys()
+            if s.client_kx_privkey and s.server_kx_pubkey:
+                pms = s.client_kx_privkey.exchange(s.server_kx_pubkey)
+                s.pre_master_secret = pms.lstrip(b"\x00")
+                if not s.extms:
+                    # If extms is set (extended master secret), the key will
+                    # need the session hash to be computed. This is provided
+                    # by the TLSClientKeyExchange. Same in all occurrences
+                    s.compute_ms_and_derive_keys()
+        except ImportError:
+            pass
 
     def post_build(self, pkt, pay):
         if not self.dh_Yc:
@@ -821,35 +832,38 @@ class ClientECDiffieHellmanPublic(_GenericTLSSessionInheritance):
     @crypto_validator
     def fill_missing(self):
         s = self.tls_session
-        s.client_kx_privkey = _tls_named_groups_generate(
-            s.client_kx_ecdh_params
-        )
-        # ecdh_Yc follows ECPoint.point format as defined in
-        # https://tools.ietf.org/html/rfc8422#section-5.4
-        pubkey = s.client_kx_privkey.public_key()
-        if isinstance(pubkey, (x25519.X25519PublicKey,
-                               x448.X448PublicKey)):
-            self.ecdh_Yc = pubkey.public_bytes(
-                serialization.Encoding.Raw,
-                serialization.PublicFormat.Raw
+        try:
+            s.client_kx_privkey = _tls_named_groups_generate(
+                s.client_kx_ecdh_params
             )
-            if s.client_kx_privkey and s.server_kx_pubkey:
-                pms = s.client_kx_privkey.exchange(s.server_kx_pubkey)
-        else:
-            # uncompressed format of an elliptic curve point
-            x = pubkey.public_numbers().x
-            y = pubkey.public_numbers().y
-            self.ecdh_Yc = (b"\x04" +
-                            pkcs_i2osp(x, (pubkey.key_size + 7) // 8) +
-                            pkcs_i2osp(y, (pubkey.key_size + 7) // 8))
-            if s.client_kx_privkey and s.server_kx_pubkey:
-                pms = s.client_kx_privkey.exchange(ec.ECDH(),
-                                                   s.server_kx_pubkey)
+            # ecdh_Yc follows ECPoint.point format as defined in
+            # https://tools.ietf.org/html/rfc8422#section-5.4
+            pubkey = s.client_kx_privkey.public_key()
+            if isinstance(pubkey, (x25519.X25519PublicKey,
+                                   x448.X448PublicKey)):
+                self.ecdh_Yc = pubkey.public_bytes(
+                    serialization.Encoding.Raw,
+                    serialization.PublicFormat.Raw
+                )
+                if s.client_kx_privkey and s.server_kx_pubkey:
+                    pms = s.client_kx_privkey.exchange(s.server_kx_pubkey)
+            else:
+                # uncompressed format of an elliptic curve point
+                x = pubkey.public_numbers().x
+                y = pubkey.public_numbers().y
+                self.ecdh_Yc = (b"\x04" +
+                                pkcs_i2osp(x, (pubkey.key_size + 7) // 8) +
+                                pkcs_i2osp(y, (pubkey.key_size + 7) // 8))
+                if s.client_kx_privkey and s.server_kx_pubkey:
+                    pms = s.client_kx_privkey.exchange(ec.ECDH(),
+                                                       s.server_kx_pubkey)
 
-        if s.client_kx_privkey and s.server_kx_pubkey:
-            s.pre_master_secret = pms
-            if not s.extms:
-                s.compute_ms_and_derive_keys()
+            if s.client_kx_privkey and s.server_kx_pubkey:
+                s.pre_master_secret = pms
+                if not s.extms:
+                    s.compute_ms_and_derive_keys()
+        except ImportError:
+            pass
 
     def post_build(self, pkt, pay):
         if not self.ecdh_Yc:

@@ -1510,7 +1510,8 @@ class WINNT_ACL(Packet):
             None,
             length_of="Aces",
             adjust=lambda _, x: x + 8,
-            fmt="<H",  # total size including header : AclRevision(1) + Sbz1(1) + AclSize(2) + AceCount(2) + Sbz2(2)
+            fmt="<H",
+            # total size including header : AclRevision(1) + Sbz1(1) + AclSize(2) + AceCount(2) + Sbz2(2)
         ),
         FieldLenField("AceCount", None, count_of="Aces", fmt="<H"),
         ShortField("Sbz2", 0),
@@ -1772,7 +1773,10 @@ def _SMB2_post_build(self, p, pay_offset, fields):
 class DirectTCP(NBTSession):
     name = "Direct TCP"
     MAXLENGTH = 0xFFFFFF
-    fields_desc = [ByteField("zero", 0), ThreeBytesField("LENGTH", None)]
+    fields_desc = [
+        ByteField("zero", 0),
+        ThreeBytesField("LENGTH", None),
+    ]
 
 
 # SMB2 sect 2.2.1.1
@@ -2528,10 +2532,18 @@ class SMB2_Negotiate_Protocol_Response(_SMB2_Payload, _NTLMPayloadPacket):
         )
         if getattr(self, "SecurityBlob", None):
             if self.SecurityBlobLen is None:
-                pkt = pkt[:58] + struct.pack("<H", len(self.SecurityBlob)) + pkt[60:]
+                pkt = (
+                    pkt[:58]
+                    + struct.pack("<H", len(self.SecurityBlob))
+                    + pkt[60:]
+                )
         if getattr(self, "NegotiateContexts", None):
             if self.NegotiateContextsCount is None:
-                pkt = pkt[:6] + struct.pack("<H", len(self.NegotiateContexts)) + pkt[8:]
+                pkt = (
+                    pkt[:6]
+                    + struct.pack("<H", len(self.NegotiateContexts))
+                    + pkt[8:]
+                )
         return pkt + pay
 
 
@@ -3053,8 +3065,12 @@ class SMB2_Create_Context(_NTLMPayloadPacket):
                     b"DH2Q": SMB2_CREATE_DURABLE_HANDLE_REQUEST_V2,
                     b"DH2C": SMB2_CREATE_DURABLE_HANDLE_RECONNECT_V2,
                     # 3.1.1 only
-                    b"E\xbc\xa6j\xef\xa7\xf7J\x90\x08\xfaF.\x14Mt": SMB2_CREATE_APP_INSTANCE_ID,  # noqa: E501
-                    b"\xb9\x82\xd0\xb7;V\x07O\xa0{RJ\x81\x16\xa0\x10": SMB2_CREATE_APP_INSTANCE_VERSION,  # noqa: E501
+                    (
+                        b"E\xbc\xa6j\xef\xa7\xf7J\x90\x08\xfaF.\x14Mt"
+                    ): SMB2_CREATE_APP_INSTANCE_ID,
+                    (
+                        b"\xb9\x82\xd0\xb7;V\x07O\xa0{RJ\x81\x16\xa0\x10"
+                    ): SMB2_CREATE_APP_INSTANCE_VERSION,
                 }[self.Name]
                 if self.Name == b"RqLs" and self.DataLen > 32:
                     data_cls = SMB2_CREATE_REQUEST_LEASE_V2

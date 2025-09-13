@@ -134,7 +134,7 @@ if conf.crypto_valid:
         key_len = 32
 
     class Cipher_CAMELLIA_128_CBC(_BlockCipher):
-        pc_cls = algorithms.Camellia
+        pc_cls = decrepit_algorithms.Camellia
         pc_cls_mode = modes.CBC
         block_size = 16
         key_len = 16
@@ -152,13 +152,13 @@ if conf.crypto_valid:
         pc_cls = decrepit_algorithms.TripleDES
         pc_cls_mode = modes.ECB
         block_size = 8
-        key_len = 8
+        key_len = 24
 
     class Cipher_DES_CBC(_BlockCipher):
         pc_cls = decrepit_algorithms.TripleDES
         pc_cls_mode = modes.CBC
         block_size = 8
-        key_len = 8
+        key_len = 24
 
     class Cipher_DES40_CBC(Cipher_DES_CBC):
         """
@@ -187,16 +187,23 @@ if conf.crypto_valid:
                                     category=CryptographyDeprecationWarning)
 
             class Cipher_IDEA_CBC(_BlockCipher):
-                pc_cls = decrepit_algorithms.IDEA
+                try:
+                    pc_cls = decrepit_algorithms.IDEA
+                except AttributeError:
+                    pc_cls = None
                 pc_cls_mode = modes.CBC
                 block_size = 8
                 key_len = 16
 
             class Cipher_SEED_CBC(_BlockCipher):
-                pc_cls = decrepit_algorithms.SEED
+                try:
+                    pc_cls = decrepit_algorithms.SEED
+                except AttributeError:
+                    pc_cls = None
                 pc_cls_mode = modes.CBC
                 block_size = 16
                 key_len = 16
+
 
             _sslv2_block_cipher_algs.update({
                 "IDEA_128_CBC": Cipher_IDEA_CBC,
