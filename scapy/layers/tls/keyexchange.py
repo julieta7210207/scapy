@@ -360,7 +360,9 @@ class ServerDHParams(_GenericTLSSessionInheritance):
 
         p = pkcs_os2ip(self.dh_p)
         g = pkcs_os2ip(self.dh_g)
-        real_params = dh.DHParameterNumbers(p, g).parameters(default_backend())
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=CryptographyDeprecationWarning)
+            real_params = dh.DHParameterNumbers(p, g).parameters(default_backend())
 
         if not self.dh_Ys:
             s.server_kx_privkey = real_params.generate_private_key()

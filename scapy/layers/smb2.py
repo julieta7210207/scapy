@@ -1510,7 +1510,8 @@ class WINNT_ACL(Packet):
             None,
             length_of="Aces",
             adjust=lambda _, x: x + 8,
-            fmt="<H",  # total size including header : AclRevision(1) + Sbz1(1) + AclSize(2) + AceCount(2) + Sbz2(2)
+            fmt="<H",
+            # total size including header : AclRevision(1) + Sbz1(1) + AclSize(2) + AceCount(2) + Sbz2(2)
         ),
         FieldLenField("AceCount", None, count_of="Aces", fmt="<H"),
         ShortField("Sbz2", 0),
@@ -1806,7 +1807,8 @@ class SMB2_Header(Packet):
         LELongField("MID", 0),  # MessageID
         # ASYNC
         ConditionalField(
-            LELongField("AsyncId", 0), lambda pkt: pkt.Flags.SMB2_FLAGS_ASYNC_COMMAND
+            LELongField("AsyncId", 0),
+            lambda pkt: pkt.Flags.SMB2_FLAGS_ASYNC_COMMAND,
         ),
         # SYNC
         ConditionalField(
