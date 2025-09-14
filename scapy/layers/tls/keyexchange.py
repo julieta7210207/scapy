@@ -360,10 +360,10 @@ class ServerDHParams(_GenericTLSSessionInheritance):
 
         p = pkcs_os2ip(self.dh_p)
         g = pkcs_os2ip(self.dh_g)
-        real_params = dh.DHParameterNumbers(p, g).parameters(default_backend())
+        real_params = dh.DHParameterNumbers(p, g)
 
         if not self.dh_Ys:
-            s.server_kx_privkey = real_params.generate_private_key()
+            s.server_kx_privkey = real_params.generate_private_key(default_backend())
             pubkey = s.server_kx_privkey.public_key()
             y = pubkey.public_numbers().y
             self.dh_Ys = pkcs_i2osp(y, pubkey.key_size // 8)
