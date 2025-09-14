@@ -1510,7 +1510,9 @@ class WINNT_ACL(Packet):
             None,
             length_of="Aces",
             adjust=lambda _, x: x + 8,
-            fmt="<H",  # total size including header : AclRevision(1) + Sbz1(1) + AclSize(2) + AceCount(2) + Sbz2(2)
+            fmt="<H",
+            # total size including header : AclRevision(1) + Sbz1(1) + AclSize(2) +
+            # AceCount(2) + Sbz2(2)
         ),
         FieldLenField("AceCount", None, count_of="Aces", fmt="<H"),
         ShortField("Sbz2", 0),
@@ -2259,7 +2261,9 @@ class SMB2_Preauth_Integrity_Capabilities(Packet):
     fields_desc = [
         # According to the spec, this field value must be greater than 0
         # (cf Section 2.2.3.1.1 of MS-SMB2.pdf)
-        FieldLenField("HashAlgorithmCount", None, fmt="<H", count_of="HashAlgorithms"),
+        FieldLenField(
+            "HashAlgorithmCount", None, fmt="<H", count_of="HashAlgorithms"
+        ),
         FieldLenField("SaltLength", None, fmt="<H", length_of="Salt"),
         FieldListField(
             "HashAlgorithms",
@@ -2333,7 +2337,9 @@ class SMB2_Compression_Capabilities(Packet):
         FieldListField(
             "CompressionAlgorithms",
             None,
-            LEShortEnumField("", 0x0, SMB2_COMPRESSION_ALGORITHMS),
+            LEShortEnumField(
+                "", 0x0, SMB2_COMPRESSION_ALGORITHMS
+            ),
             count_from=lambda pkt: pkt.CompressionAlgorithmCount,
         ),
     ]
@@ -2391,7 +2397,9 @@ bind_layers(SMB2_Negotiate_Context, SMB2_Transport_Capabilities, ContextType=0x0
 class SMB2_RDMA_Transform_Capabilities(Packet):
     name = "SMB2 RDMA Transform Capabilities"
     fields_desc = [
-        FieldLenField("TransformCount", None, fmt="<H", count_of="RDMATransformIds"),
+        FieldLenField(
+            "TransformCount", None, fmt="<H", count_of="RDMATransformIds"
+        ),
         LEShortField("Reserved1", 0),
         LEIntField("Reserved2", 0),
         FieldListField(
@@ -2425,7 +2433,10 @@ class SMB2_Signing_Capabilities(Packet):
     name = "SMB2 Signing Capabilities"
     fields_desc = [
         FieldLenField(
-            "SigningAlgorithmCount", None, fmt="<H", count_of="SigningAlgorithms"
+            "SigningAlgorithmCount",
+            None,
+            fmt="<H",
+            count_of="SigningAlgorithms",
         ),
         FieldListField(
             "SigningAlgorithms",
