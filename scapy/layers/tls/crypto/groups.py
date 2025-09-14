@@ -36,9 +36,11 @@ class _FFDHParamsMetaclass(type):
         the_class = super(_FFDHParamsMetaclass, cls).__new__(cls, ffdh_name,
                                                              bases, dct)
         if conf.crypto_valid and ffdh_name != "_FFDHParams":
-            pn = DHParameterNumbers(the_class.m, the_class.g)
-            params = pn.parameters(default_backend())
-            _ffdh_groups[ffdh_name] = [params, the_class.mLen]
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", CryptographyDeprecationWarning)
+                pn = DHParameterNumbers(the_class.m, the_class.g)
+                params = pn.parameters(default_backend())
+                _ffdh_groups[ffdh_name] = [params, the_class.mLen]
         return the_class
 
 
@@ -452,9 +454,11 @@ def _tls_named_groups_import(group, pubbytes):
 
 def _tls_named_groups_pubbytes(privkey):
     if isinstance(privkey, dh.DHPrivateKey):
-        # https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.8.1
-        pubkey = privkey.public_key()
-        return int_bytes(pubkey.public_numbers().y, privkey.key_size // 8)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", CryptographyDeprecationWarning)
+            # https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.8.1
+            pubkey = privkey.public_key()
+            return int_bytes(pubkey.public_numbers().y, privkey.key_size // 8)
     elif isinstance(privkey, (x25519.X25519PrivateKey,
                               x448.X448PrivateKey)):
         # https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.8.2

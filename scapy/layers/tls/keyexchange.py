@@ -11,7 +11,9 @@ TLS key exchange logic.
 
 import math
 import struct
+import warnings
 
+from cryptography.exceptions import CryptographyDeprecationWarning
 from scapy.config import conf, crypto_validator
 from scapy.error import warning
 from scapy.fields import ByteEnumField, ByteField, EnumField, FieldLenField, \
@@ -30,6 +32,8 @@ from scapy.layers.tls.crypto.groups import (
     _tls_named_groups_import,
     _tls_named_groups_pubbytes,
 )
+
+warnings.filterwarnings('ignore', category=CryptographyDeprecationWarning)
 
 
 if conf.crypto_valid:
@@ -577,7 +581,6 @@ class ServerECDHNamedCurveParams(_GenericTLSSessionInheritance):
                    StrLenField("point", None,
                                length_from=lambda pkt: pkt.pointlen)]
 
-    @crypto_validator
     def fill_missing(self):
         """
         We do not want TLSServerKeyExchange.build() to overload and recompute
@@ -613,7 +616,6 @@ class ServerECDHNamedCurveParams(_GenericTLSSessionInheritance):
         if not s.client_kx_ecdh_params:
             s.client_kx_ecdh_params = curve_group
 
-    @crypto_validator
     def register_pubkey(self):
         """
         XXX Support compressed point format.
@@ -673,7 +675,6 @@ class ServerRSAParams(_GenericTLSSessionInheritance):
                    StrLenField("rsaexp", "",
                                length_from=lambda pkt: pkt.rsaexplen)]
 
-    @crypto_validator
     def fill_missing(self):
         k = PrivKeyRSA()
         k.fill_and_store(modulusLen=512)
@@ -693,7 +694,6 @@ class ServerRSAParams(_GenericTLSSessionInheritance):
         if self.rsaexplen is None:
             self.rsaexplen = len(self.rsaexp)
 
-    @crypto_validator
     def register_pubkey(self):
         mLen = self.rsamodlen
         m = self.rsamod
@@ -756,7 +756,6 @@ class ClientDiffieHellmanPublic(_GenericTLSSessionInheritance):
                    StrLenField("dh_Yc", "",
                                length_from=lambda pkt: pkt.dh_Yclen)]
 
-    @crypto_validator
     def fill_missing(self):
         s = self.tls_session
         s.client_kx_privkey = s.client_kx_ffdh_params.generate_private_key()
@@ -818,7 +817,6 @@ class ClientECDiffieHellmanPublic(_GenericTLSSessionInheritance):
                    StrLenField("ecdh_Yc", "",
                                length_from=lambda pkt: pkt.ecdh_Yclen)]
 
-    @crypto_validator
     def fill_missing(self):
         s = self.tls_session
         s.client_kx_privkey = _tls_named_groups_generate(
