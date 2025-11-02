@@ -3031,6 +3031,8 @@ class FlagValue(object):
         if isinstance(value, list):
             y = 0
             for i in value:
+                if i not in self.names:
+                    raise ValueError("Unknown flag value: %s" % i)
                 y |= 1 << self.names.index(i)
             value = y
         return int(value)

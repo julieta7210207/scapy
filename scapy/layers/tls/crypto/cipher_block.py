@@ -134,7 +134,10 @@ if conf.crypto_valid:
         key_len = 32
 
     class Cipher_CAMELLIA_128_CBC(_BlockCipher):
-        pc_cls = algorithms.Camellia
+        try:
+            pc_cls = algorithms.Camellia
+        except AttributeError:
+            pc_cls = decrepit_algorithms.Camellia
         pc_cls_mode = modes.CBC
         block_size = 16
         key_len = 16
@@ -149,13 +152,19 @@ _sslv2_block_cipher_algs = {}
 
 if conf.crypto_valid:
     class Cipher_DES_ECB(_BlockCipher):
-        pc_cls = decrepit_algorithms.TripleDES
+        try:
+            pc_cls = algorithms.TripleDES
+        except AttributeError:
+            pc_cls = decrepit_algorithms.TripleDES
         pc_cls_mode = modes.ECB
         block_size = 8
         key_len = 8
 
     class Cipher_DES_CBC(_BlockCipher):
-        pc_cls = decrepit_algorithms.TripleDES
+        try:
+            pc_cls = algorithms.TripleDES
+        except AttributeError:
+            pc_cls = decrepit_algorithms.TripleDES
         pc_cls_mode = modes.CBC
         block_size = 8
         key_len = 8
@@ -173,7 +182,10 @@ if conf.crypto_valid:
         key_len = 5
 
     class Cipher_3DES_EDE_CBC(_BlockCipher):
-        pc_cls = decrepit_algorithms.TripleDES
+        try:
+            pc_cls = algorithms.TripleDES
+        except AttributeError:
+            pc_cls = decrepit_algorithms.TripleDES
         pc_cls_mode = modes.CBC
         block_size = 8
         key_len = 24
@@ -187,13 +199,19 @@ if conf.crypto_valid:
                                     category=CryptographyDeprecationWarning)
 
             class Cipher_IDEA_CBC(_BlockCipher):
-                pc_cls = decrepit_algorithms.IDEA
+                try:
+                    pc_cls = algorithms.IDEA
+                except AttributeError:
+                    pc_cls = decrepit_algorithms.IDEA
                 pc_cls_mode = modes.CBC
                 block_size = 8
                 key_len = 16
 
             class Cipher_SEED_CBC(_BlockCipher):
-                pc_cls = decrepit_algorithms.SEED
+                try:
+                    pc_cls = algorithms.SEED
+                except AttributeError:
+                    pc_cls = decrepit_algorithms.SEED
                 pc_cls_mode = modes.CBC
                 block_size = 16
                 key_len = 16

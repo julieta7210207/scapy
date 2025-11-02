@@ -22,7 +22,7 @@ if conf.crypto_valid:
     from cryptography.hazmat.backends import default_backend
     from cryptography.hazmat.primitives.asymmetric import dh, ec
     from cryptography.hazmat.primitives import serialization
-    from cryptography.hazmat.primitives.asymmetric.dh import DHParameterNumbers
+    from cryptography.hazmat.primitives.asymmetric.dh import DHParameterNumbers, FFDHParameters
 if conf.crypto_valid_advanced:
     from cryptography.hazmat.primitives.asymmetric import x25519
     from cryptography.hazmat.primitives.asymmetric import x448
@@ -36,8 +36,7 @@ class _FFDHParamsMetaclass(type):
         the_class = super(_FFDHParamsMetaclass, cls).__new__(cls, ffdh_name,
                                                              bases, dct)
         if conf.crypto_valid and ffdh_name != "_FFDHParams":
-            pn = DHParameterNumbers(the_class.m, the_class.g)
-            params = pn.parameters(default_backend())
+            params = FFDHParameters(the_class.m, the_class.g, default_backend())
             _ffdh_groups[ffdh_name] = [params, the_class.mLen]
         return the_class
 
@@ -427,9 +426,8 @@ def _tls_named_groups_import(group, pubbytes):
     if group in _tls_named_ffdh_groups:
         # https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.8.1
         params = _ffdh_groups[_tls_named_ffdh_groups[group]][0]
-        pn = params.parameter_numbers()
         y = bytes_int(pubbytes)
-        public_numbers = dh.DHPublicNumbers(y, pn)
+        public_numbers = dh.FFDHPublicNumbers(y, params)
         return public_numbers.public_key(default_backend())
     elif group in _tls_named_curves:
         # https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.8.2
@@ -461,7 +459,7 @@ def _tls_named_groups_import(group, pubbytes):
 
 
 def _tls_named_groups_pubbytes(privkey):
-    if isinstance(privkey, dh.DHPrivateKey):
+    if isinstance(privkey, dh.FFDHPrivateKey):
         # https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.8.1
         pubkey = privkey.public_key()
         return int_bytes(pubkey.public_numbers().y, privkey.key_size // 8)
