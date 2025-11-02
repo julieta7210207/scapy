@@ -3031,7 +3031,10 @@ class FlagValue(object):
         if isinstance(value, list):
             y = 0
             for i in value:
-                y |= 1 << self.names.index(i)
+                try:
+                    y |= 1 << self.names.index(i)
+                except ValueError:
+                    pass
             value = y
         return int(value)
 
